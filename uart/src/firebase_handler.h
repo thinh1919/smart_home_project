@@ -29,12 +29,19 @@ void handleFirebase();
 
 /**
  * Upload dữ liệu từ các client lên Firebase RTDB
+ * (Đã được tối ưu: chỉ cập nhật buffer, không upload ngay)
  * Hàm này được gọi từ processValidPacket()
  * 
  * @param payload Con trỏ tới dữ liệu payload (bao gồm ESPNowPacketHeader)
  * @param len Độ dài payload
  */
 void uploadToFirebase(uint8_t* payload, int len);
+
+/**
+ * Đồng bộ toàn bộ dữ liệu buffer lên Firebase trong một lần gọi
+ * Gọi hàm này theo định kỳ (ví dụ: mỗi 60 giây) trong loop()
+ */
+void syncDataToFirebase();
 
 /**
  * Kiểm tra trạng thái kết nối Firebase

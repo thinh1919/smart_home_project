@@ -11,6 +11,9 @@ FirebaseConfig config;
 bool firebaseReady = false;
 unsigned long sendDataPrevMillis = 0;
 
+// Buffer để lưu trạng thái hiện tại của toàn bộ nhà
+HomeStatus currentHomeState = {0};
+
 /**
  * Khởi tạo Firebase connection
  */
@@ -79,13 +82,9 @@ bool isFirebaseReady() {
 
 /**
  * Upload dữ liệu lên Firebase theo client_id
+ * (Đã được tối ưu: chỉ cập nhật buffer, không upload ngay)
  */
 void uploadToFirebase(uint8_t* payload, int len) {
-    if (!isFirebaseReady()) {
-        Serial.println("✗ Firebase chưa sẵn sàng, bỏ qua upload");
-        return;
-    }
-    
     // Kiểm tra độ dài tối thiểu (phải có ít nhất header)
     if (len < sizeof(ESPNowPacketHeader)) {
         Serial.println("✗ Payload quá ngắn, không có header");
@@ -97,32 +96,21 @@ void uploadToFirebase(uint8_t* payload, int len) {
     uint8_t client_id = header->client_id;
     uint8_t msg_type = header->msg_type;
     
-    Serial.printf("\n📤 Upload Firebase: Client=%d, Type=%d\n", client_id, msg_type);
+    Serial.printf("\n📦 Buffer Update: Client=%d, Type=%d\n", client_id, msg_type);
     
     // Con trỏ tới phần data (sau header)
     uint8_t* dataPtr = payload + sizeof(ESPNowPacketHeader);
     size_t dataLen = len - sizeof(ESPNowPacketHeader) - sizeof(uint16_t); // Trừ header và checksum
     
-    String path = "";
-    bool success = false;
-    
-    // Switch case theo client_id
+    // Cập nhật buffer currentHomeState theo client_id
     switch (client_id) {
         case CLIENT_ID_DOOR: {
             // Client 1: Cửa phòng khách
             if (dataLen >= sizeof(DoorData)) {
                 DoorData* data = (DoorData*)dataPtr;
-                path = "/living_room/door";
-                
-                Serial.printf("  🚪 Cửa: %s\n", data->is_open ? "MỞ" : "ĐÓNG");
-                
-                // Upload is_open
-                success = Firebase.RTDB.setBool(&fbdo, path + "/is_open", data->is_open);
-                if (success) {
-                    Serial.println("  ✓ Upload door status thành công");
-                } else {
-                    Serial.printf("  ✗ Lỗi: %s\n", fbdo.errorReason().c_str());
-                }
+                currentHomeState.living_room_door.is_open = data->is_open;
+                currentHomeState.living_room_door.command = data->command;
+                Serial.printf("  🚪 Cửa: %s (buffered)\n", data->is_open ? "MỞ" : "ĐÓNG");
             }
             break;
         }
@@ -131,16 +119,9 @@ void uploadToFirebase(uint8_t* payload, int len) {
             // Client 2: Đèn phòng khách
             if (dataLen >= sizeof(LightData)) {
                 LightData* data = (LightData*)dataPtr;
-                path = "/living_room/light";
-                
-                Serial.printf("  💡 Đèn: Mode=%d\n", data->mode);
-                
-                success = Firebase.RTDB.setInt(&fbdo, path + "/mode", data->mode);
-                if (success) {
-                    Serial.println("  ✓ Upload light mode thành công");
-                } else {
-                    Serial.printf("  ✗ Lỗi: %s\n", fbdo.errorReason().c_str());
-                }
+                currentHomeState.living_room_light.mode = data->mode;
+                currentHomeState.living_room_light.command = data->command;
+                Serial.printf("  💡 Đèn: Mode=%d (buffered)\n", data->mode);
             }
             break;
         }
@@ -149,16 +130,8 @@ void uploadToFirebase(uint8_t* payload, int len) {
             // Client 4: Cảm biến môi trường phòng khách
             if (dataLen >= sizeof(EnvSensorData)) {
                 EnvSensorData* data = (EnvSensorData*)dataPtr;
-                path = "/living_room/env";
-                
-                Serial.printf("  🌡️  Chất lượng không khí: %d PPM\n", data->air_quality);
-                
-                success = Firebase.RTDB.setInt(&fbdo, path + "/air_quality", data->air_quality);
-                if (success) {
-                    Serial.println("  ✓ Upload air quality thành công");
-                } else {
-                    Serial.printf("  ✗ Lỗi: %s\n", fbdo.errorReason().c_str());
-                }
+                currentHomeState.living_room_env.air_quality = data->air_quality;
+                Serial.printf("  🌡️  Chất lượng không khí: %d PPM (buffered)\n", data->air_quality);
             }
             break;
         }
@@ -167,16 +140,9 @@ void uploadToFirebase(uint8_t* payload, int len) {
             // Client 7: Rèm cửa phòng ngủ
             if (dataLen >= sizeof(CurtainData)) {
                 CurtainData* data = (CurtainData*)dataPtr;
-                path = "/bedroom/curtain";
-                
-                Serial.printf("  🪟 Rèm: %d%%\n", data->position);
-                
-                success = Firebase.RTDB.setInt(&fbdo, path + "/position", data->position);
-                if (success) {
-                    Serial.println("  ✓ Upload curtain position thành công");
-                } else {
-                    Serial.printf("  ✗ Lỗi: %s\n", fbdo.errorReason().c_str());
-                }
+                currentHomeState.bedroom_curtain.position = data->position;
+                currentHomeState.bedroom_curtain.target_pos = data->target_pos;
+                Serial.printf("  🪟 Rèm: %d%% (buffered)\n", data->position);
             }
             break;
         }
@@ -185,23 +151,10 @@ void uploadToFirebase(uint8_t* payload, int len) {
             // Client 8: Cảm biến môi trường phòng ngủ
             if (dataLen >= sizeof(BedroomEnvData)) {
                 BedroomEnvData* data = (BedroomEnvData*)dataPtr;
-                path = "/bedroom/env";
-                
-                Serial.printf("  🌡️  Nhiệt độ: %.1f°C, Độ ẩm: %.1f%%\n", 
+                currentHomeState.bedroom_env.temp = data->temp;
+                currentHomeState.bedroom_env.hum = data->hum;
+                Serial.printf("  🌡️  Nhiệt độ: %.1f°C, Độ ẩm: %.1f%% (buffered)\n", 
                              data->temp, data->hum);
-                
-                // Upload temperature
-                success = Firebase.RTDB.setFloat(&fbdo, path + "/temperature", data->temp);
-                if (success) {
-                    // Upload humidity
-                    success = Firebase.RTDB.setFloat(&fbdo, path + "/humidity", data->hum);
-                }
-                
-                if (success) {
-                    Serial.println("  ✓ Upload temp & humidity thành công");
-                } else {
-                    Serial.printf("  ✗ Lỗi: %s\n", fbdo.errorReason().c_str());
-                }
             }
             break;
         }
@@ -210,16 +163,9 @@ void uploadToFirebase(uint8_t* payload, int len) {
             // Client 9: Quạt phòng ngủ
             if (dataLen >= sizeof(FanData)) {
                 FanData* data = (FanData*)dataPtr;
-                path = "/bedroom/fan";
-                
-                Serial.printf("  🌀 Quạt: Mode=%d\n", data->mode);
-                
-                success = Firebase.RTDB.setInt(&fbdo, path + "/mode", data->mode);
-                if (success) {
-                    Serial.println("  ✓ Upload fan mode thành công");
-                } else {
-                    Serial.printf("  ✗ Lỗi: %s\n", fbdo.errorReason().c_str());
-                }
+                currentHomeState.bedroom_fan.mode = data->mode;
+                currentHomeState.bedroom_fan.command = data->command;
+                Serial.printf("  🌀 Quạt: Mode=%d (buffered)\n", data->mode);
             }
             break;
         }
@@ -228,16 +174,9 @@ void uploadToFirebase(uint8_t* payload, int len) {
             // Client 10: Máy lọc không khí
             if (dataLen >= sizeof(PurifierData)) {
                 PurifierData* data = (PurifierData*)dataPtr;
-                path = "/living_room/purifier";
-                
-                Serial.printf("  💨 Máy lọc: %s\n", data->state ? "BẬT" : "TẮT");
-                
-                success = Firebase.RTDB.setBool(&fbdo, path + "/state", data->state);
-                if (success) {
-                    Serial.println("  ✓ Upload purifier state thành công");
-                } else {
-                    Serial.printf("  ✗ Lỗi: %s\n", fbdo.errorReason().c_str());
-                }
+                currentHomeState.living_room_purifier.state = data->state;
+                currentHomeState.living_room_purifier.command = data->command;
+                Serial.printf("  💨 Máy lọc: %s (buffered)\n", data->state ? "BẬT" : "TẮT");
             }
             break;
         }
@@ -245,6 +184,68 @@ void uploadToFirebase(uint8_t* payload, int len) {
         default:
             Serial.printf("  ⚠️  Client ID không xác định: %d\n", client_id);
             break;
+    }
+    
+    // Cập nhật timestamp
+    currentHomeState.last_updated = millis();
+    Serial.println();
+}
+
+/**
+ * Đồng bộ toàn bộ dữ liệu buffer lên Firebase trong một lần gọi
+ * Gọi hàm này theo định kỳ (ví dụ: mỗi 60 giây)
+ */
+void syncDataToFirebase() {
+    if (!isFirebaseReady()) {
+        Serial.println("✗ Firebase chưa sẵn sàng, bỏ qua sync");
+        return;
+    }
+    
+    Serial.println("\n🔄 Bắt đầu đồng bộ dữ liệu lên Firebase...");
+    
+    // Tạo FirebaseJson object để chứa toàn bộ dữ liệu
+    FirebaseJson json;
+    
+    // ===== PHÒNG KHÁCH =====
+    // Door
+    json.set("living_room/door/is_open", currentHomeState.living_room_door.is_open);
+    json.set("living_room/door/command", (int)currentHomeState.living_room_door.command);
+    
+    // Light
+    json.set("living_room/light/mode", (int)currentHomeState.living_room_light.mode);
+    json.set("living_room/light/command", (int)currentHomeState.living_room_light.command);
+    
+    // Purifier
+    json.set("living_room/purifier/state", currentHomeState.living_room_purifier.state);
+    json.set("living_room/purifier/command", (int)currentHomeState.living_room_purifier.command);
+    
+    // Environment sensor
+    json.set("living_room/env/air_quality", (int)currentHomeState.living_room_env.air_quality);
+    
+    // ===== PHÒNG NGỦ =====
+    // Curtain
+    json.set("bedroom/curtain/position", (int)currentHomeState.bedroom_curtain.position);
+    json.set("bedroom/curtain/target_pos", (int)currentHomeState.bedroom_curtain.target_pos);
+    
+    // Fan
+    json.set("bedroom/fan/mode", (int)currentHomeState.bedroom_fan.mode);
+    json.set("bedroom/fan/command", (int)currentHomeState.bedroom_fan.command);
+    
+    // Environment sensor
+    json.set("bedroom/env/temperature", currentHomeState.bedroom_env.temp);
+    json.set("bedroom/env/humidity", currentHomeState.bedroom_env.hum);
+    
+    // ===== SCENE CONTROL =====
+    json.set("scene_control/type", (int)currentHomeState.scene_control.type);
+    json.set("scene_control/status", (int)currentHomeState.scene_control.status);
+    
+    // Gửi toàn bộ JSON trong một lần updateNode
+    if (Firebase.RTDB.updateNode(&fbdo, "/", &json)) {
+        Serial.println("✓ Đồng bộ dữ liệu thành công!");
+        Serial.printf("  📊 Thời gian: %lu ms\n", millis() - currentHomeState.last_updated);
+    } else {
+        Serial.println("✗ Đồng bộ dữ liệu thất bại!");
+        Serial.printf("  Lỗi: %s\n", fbdo.errorReason().c_str());
     }
     
     Serial.println();

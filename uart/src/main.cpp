@@ -6,6 +6,10 @@
 #include "firebase_listener.h"
 #endif
 
+// Timer cho batch upload (60 giây)
+unsigned long lastSyncMillis = 0;
+const unsigned long SYNC_INTERVAL = 60000; // 60 seconds
+
 void setup() {
   // Khởi tạo Serial cho debug
   Serial.begin(115200);
@@ -27,6 +31,7 @@ void setup() {
   initUartHandler();
   
   Serial.println("Sẵn sàng nhận dữ liệu từ Gateway...");
+  Serial.printf("Batch upload interval: %lu giây\n", SYNC_INTERVAL / 1000);
 }
 
 void loop() {
@@ -36,6 +41,13 @@ void loop() {
   
   // Xử lý Firebase stream
   handleFirebaseStream();
+  
+  // Batch upload: Đồng bộ dữ liệu mỗi 60 giây
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastSyncMillis >= SYNC_INTERVAL) {
+    lastSyncMillis = currentMillis;
+    syncDataToFirebase();
+  }
 #endif
   
   // Đọc và xử lý UART stream (non-blocking)
