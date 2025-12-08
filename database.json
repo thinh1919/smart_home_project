@@ -1,0 +1,192 @@
+1. đây là phần lưu trông realtime database trên firebase
+( 1 document duy nhat)
+{
+  "last_updated": 1700000000, //time update
+  
+    // kich ban tu dong
+  "scene_control": 
+  {
+    "type": "NONE",       // App ghi: "VE_NHA" hoặc "ROI_NHA" vào đây (ID)
+                             // Gateway đọc xong, thực thi, rồi reset về "NONE"
+    "status": "NONE"        // "NONE", "RUNNING", "DONE"
+  },
+  // --- 1. PHÒNG KHÁCH (Client 1, 2, 6, 10) ---
+  "living_room": 
+  {
+    "door": { // Client 1
+      "is_open": true,       // Trạng thái thật
+      "command": "NONE",       // Lệnh từ App: "OPEN", "NONE" , "CLOSE"
+    },
+    "light": { // Client 2
+      "mode": 0,               // 0: Tắt, 1: Eco, 2: Vừa, 3: Mạnh
+      "command": -1            // -1: None, 0-3: Lệnh từ App
+    },
+    "purifier": { // Client 10          
+      "state": true,           // On/Off
+      "command": "NONE",       // "ON", "OFF", "NONE"
+    },
+    "env": { // Client 4 (Sensor)
+      "air_quality": 120
+    }
+  },
+
+  // --- 2. PHÒNG NGỦ (Client 7, 8, 9) ---
+  "bedroom":    
+  {
+    "curtain": { // Client 7
+      "position": 50,          // % độ mở hiện tại
+      "target_pos": -1         // -1: None, 0-100: Lệnh từ App
+    },
+    "fan": { // Client 9
+      "mode": 2,               // 0: Tắt, 1: Eco, 2: Vừa, 3: Mạnh
+      "command": -1            // -1: None, 0-3: Lệnh từ App
+    },
+    "env": { // Client 8
+      "temp": 26,
+      "hum": 70
+    }  
+  },
+
+  // --- 3. CỔNG (Client 3) ---
+  "gate": 
+  {
+    "is_open": false,
+    "command": "NONE",            // "OPEN", "CLOSE", "NONE"
+    "sync_card": false,          // cờ báo đồng bộ thẻ rfid
+     "add_card_mode": false,        // App bật -> ESP vào chế độ học thẻ
+    "add_card_owner": "",          // Tên user nhập trên app
+    "delete_card_uid": ""          // App gửi UID cần xóa
+  }
+}
+
+2.đây là phần lưu trữ firestore trên firebase
+// kich ban tu dong
+collection: scenario
+[
+-document 1: roi nha
+ID:"ROI_NHA"
+  {
+  "actions": 
+  [
+    {
+      "device_path": "living_room.light", // Đường dẫn trong dashboard
+      "field": "command",
+      "value": 0 // Tắt đèn
+    },
+    {
+      "device_path": "living_room.purifier",
+      "field": "command",
+      "value": "OFF"
+    },
+    {
+      "device_path": "living_room.door",
+      "field": "command",
+      "value": "LOCK"
+    },
+    {
+      "device_path": "bedroom.curtain",
+      "field": "target_pos",
+      "value": 0 // Đóng rèm
+    },
+    {
+      "device_path": "bedroom.fan",
+      "field": "command",
+      "value": 0 // Tắt quạt
+    },
+    {
+      "device_path": "gate",
+      "field": "command",
+      "value": "CLOSE"
+    }
+  ]
+  }
+
+document 2: ve nha
+ID:"VE_NHA"
+{
+  "actions": 
+  [
+    {
+      "device_path": "living_room.light",
+      "field": "command",
+      "value": 2 // Bật sáng vừa
+    },
+    {
+      "device_path": "bedroom.curtain",
+      "field": "target_pos",
+      "value": 100 // Mở rèm
+    },
+    {
+        "device_path": "living_room.purifier",
+        "field": "command",
+        "value": "ON" // Quạt gió vừa
+    }
+  ]
+}
+]
+
+
+colection: access_log     log hiển thị
+ID document: auto id
+{
+  "timestamp": 1700000000,
+  "user_name": "Nguyễn Đức Thịnh", // Tên người mở.
+  "user_uid": "FRASWFAWE5R34Q25", // AUTH UID của người mở
+  "card_uid": "JGHGHAIIJH1231",          // uid thẻ rfid
+  "action": "OPEN",                // "OPEN" (Mở), "CLOSE" (Đóng)
+}
+
+collection: rfid_cards      
+id documents :                    // uid the rfid
+{
+  "name": "Nguyễn Đức Thịnh",
+  "is_active": true,
+  "owner_uid": "authentication uid"  // liên kết với user
+  "created_at": 1700000000
+}
+
+
+colection: energy
+ID: 2025_11 (id theo từng tháng của năm)
+{
+  "month": "2025-11",      // Để hiển thị tiêu đề
+  "year": 2025,            // Để App lọc: .where("year", isEqualTo: 2025) -> Vẽ biểu đồ năm
+  
+  "total_kwh": 150.5,      // Tổng điện tiêu thụ cả tháng (Cộng dồn từ ACS712 Tổng)
+  "total_cost": 350000,    // Tổng tiền (App có thể tự nhân giá hoặc ESP32 tính)
+
+  // --- 1. DỮ LIỆU ĐỂ VẼ BIỂU ĐỒ NGÀY & TUẦN ---
+  // Key là ngày trong tháng (01 đến 31). Value là kWh của ngày đó.
+  "daily_data": {
+    "01": 5.2,  // Ngày 1
+    "02": 4.8,  // Ngày 2
+    "03": 6.1,
+    // ... ESP32 tự động append ngày mới vào đây ...
+    "24": 2.5   // Ngày hôm nay
+  },
+
+  // --- 2. DỮ LIỆU ĐỂ VẼ biểu đồ
+  // Kết hợp giữa đo thật và ước lượng
+  "device_consumption": {
+    // Nhóm 1: Đo thật bằng ACS712 con (Chính xác cao)
+    "fan_bed": 15.2,     
+    "purifier": 10.5,    
+    
+    // Nhóm 2: Ước lượng bằng Công suất định danh (Code tự tính: Time * Wat)
+    "light_living": 5.1, 
+    "curtain": 0.2,      
+    
+    // Nhóm 3: Phần còn lại (Quan trọng)
+    // Formula: Others = Tổng ACS712 - (Tổng các cái trên)
+    "others": 111.5      
+  }
+}
+
+collection: user      // lưu thông tin người dùng dang nhập
+document ID:          // authentication uid
+{
+	"is_active": "true",
+	"name":"Nguyễn Đức Thịnh",
+  "email": "nguyenducthinh@example.com",
+  "phone": "+84123456789",
+}
