@@ -1,0 +1,79 @@
+1. Chế độ Thêm Thẻ (ADD CARD MODE)
+
+Thêm vào Realtime Database:
+
+"gate": {
+    "add_card_mode": false,      // app bật ON để gateway học thẻ
+    "add_card_owner": "",        // tên người (app nhập)
+    "list_card": {...},
+    "sync_card": false
+}
+
+❗Luồng hoạt động:
+(1) User bấm “Thêm thẻ” trên app → nhập tên → nhấn OK
+
+App ghi:
+
+gate/add_card_mode = true
+gate/add_card_owner = "Nguyễn Đức Thịnh"
+
+(2) ESP32 thấy add_card_mode = true → bật chế độ học thẻ
+
+ESP32 chuyển sang mode:
+
+bật đèn LED “đang chờ quẹt thẻ”
+
+dừng xử lý RFID bình thường
+
+(3) User quẹt thẻ → ESP32 đọc UID = ABCD1234
+
+ESP32:
+
+Ghi Firestore:
+
+rfid_cards/ABCD1234 = {
+    "name": "Nguyễn Đức Thịnh",
+    "is_active": true
+}
+
+
+Append vào list_card trong RTDB
+
+Reset flag:
+
+add_card_mode = false
+add_card_owner = ""
+
+✅ 2. Chế độ Xóa Thẻ (DELETE CARD MODE)
+
+Thêm 1 flag:
+
+"gate": {
+    "delete_card_uid": "",
+    "list_card": {...}
+}
+
+❗Luồng hoạt động:
+(1) User chọn 1 UID trên app → bấm “Xóa”
+
+App set:
+
+gate/delete_card_uid = "ABCD1234"
+
+(2) ESP32 nhìn thấy delete_card_uid != ""
+
+→ ESP32:
+
+Gỡ UID đó khỏi list_card
+
+Trong Firestore set:
+
+rfid_cards/ABCD1234/is_active = false
+
+
+Reset flag:
+
+delete_card_uid = ""
+
+
+Đơn giản - sạch sẽ - dễ debug.
