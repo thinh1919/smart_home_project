@@ -13,8 +13,6 @@
 // Lấy trong Realtime Database -> Data (Copy link có https)
 #define DATABASE_URL "https://smarthome-41aff-default-rtdb.asia-southeast1.firebasedatabase.app/"
 
-//project id: 
-#define PROJECT_ID "smarthome-41aff"
 
 // 3. User Authentication (Nên dùng Email/Pass cho thiết bị IoT cố định)
 // Vào Authentication -> Users -> Add user (ví dụ: device@smarthome.com)

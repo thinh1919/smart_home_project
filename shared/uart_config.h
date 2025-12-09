@@ -28,7 +28,7 @@ typedef struct {
     uint8_t end;                // Byte kết thúc: UART_END_BYTE (0x55)
 } UartFrame;
 
-// Các hàm hỗ trợ
+
 // Tính toán checksum bằng phép XOR
 inline uint8_t calculateChecksum(UartCommand cmd, uint8_t len, const uint8_t* payload) {
     uint8_t checksum = cmd ^ len;

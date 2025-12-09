@@ -66,6 +66,7 @@ struct GateData {
 // ===== CLIENT 4: CẢM BIẾN MÔI TRƯỜNG (Phòng Khách) =====
 struct EnvSensorData {
     uint16_t air_quality;   // Chất lượng không khí (PPM)
+    float lux;           // Độ sáng (lux)
 };
 
 // ===== CLIENT 7: RÈM CỬA (Phòng Ngủ) =====
@@ -78,6 +79,7 @@ struct CurtainData {
 struct BedroomEnvData {
     float temp;             // Nhiệt độ (°C)
     float hum;              // Độ ẩm (%)
+    float lux;           // Độ sáng (lux)
 };
 
 // ===== CLIENT 9: QUẠT (Phòng Ngủ) =====

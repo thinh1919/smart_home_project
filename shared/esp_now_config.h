@@ -16,17 +16,17 @@ uint8_t gatewayAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 // ===== ĐỊA CHỈ MAC CỦA CÁC CLIENT =====
 // Thay đổi địa chỉ MAC theo thiết bị thực tế
 // Lưu ý: Phải chạy sketch lấy MAC trên từng ESP32 trước
-uint8_t clientMacAddress[10][6] = {
+uint8_t clientMacAddress[11][6] = {
     {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x01},  // [1] - Client 1: Cửa phòng khách
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x02},  // [2] - Client 2: Đèn phòng khách
-    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},  // [3] - Không dùng (đã xóa cổng)
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},  // [3] - Client 3: Cổng (chưa sử dụng)
     {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x04},  // [4] - Client 4: Cảm biến môi trường phòng khách
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x07},  // [7] - Client 7: Rèm cửa phòng ngủ
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x08},  // [8] - Client 8: Cảm biến môi trường phòng ngủ
+    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x07},  // [5] - Client 5: Máy lọc không khí
+    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x06},  // [6] - Client 6: Đèn phòng khách
+    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x08},  // [7] - Client 7: Rèm cửa phòng ngủ
+    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x0A},  // [8] - Client 8: Cảm biến môi trường phòng ngủ
     {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x09},  // [9] - Client 9: Quạt phòng ngủ
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x0A}   // [10] - Client 10: Máy lọc không khí 
 };
-// Lưu ý: Client 10 (Máy lọc không khí) sẽ thêm vào mảng khi cần mở rộng
+
 
 // ===== CẤU HÌNH WIFI CHANNEL =====
 // ESP-NOW hoạt động tốt nhất khi tất cả thiết bị cùng channel
@@ -35,16 +35,16 @@ uint8_t clientMacAddress[10][6] = {
 // ===== THÔNG TIN CLIENT ID =====
 // Định nghĩa ID cho từng client trong hệ thống
 #define CLIENT_ID_DOOR          1   // Cửa phòng khách
-#define CLIENT_ID_LIGHT         2   // Đèn phòng khách
+#define CLIENT_ID_LIGHT         6   // Đèn phòng khách
 #define CLIENT_ID_GATE          3   // Cổng
 #define CLIENT_ID_ENV_LIVING    4   // Cảm biến môi trường phòng khách
 #define CLIENT_ID_CURTAIN       7   // Rèm cửa phòng ngủ
 #define CLIENT_ID_ENV_BEDROOM   8   // Cảm biến môi trường phòng ngủ
 #define CLIENT_ID_FAN           9   // Quạt phòng ngủ
-#define CLIENT_ID_PURIFIER      10  // Máy lọc không khí
+#define CLIENT_ID_PURIFIER      5   // Máy lọc không khí
 
 // Số lượng client tối đa
-#define MAX_CLIENTS             10
+#define MAX_CLIENTS             11
 
 // ===== CẤU HÌNH ESP-NOW =====
 #define ESP_NOW_MAX_DATA_LEN    250     // Kích thước tối đa của gói tin ESP-NOW
