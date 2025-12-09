@@ -8,10 +8,10 @@
 
 // 2. Firebase Project Info
 // Lấy trong Project Settings -> General -> Web App
-#define API_KEY "cEjzpyZD1DPsxk0MY58SYtN7nRQv4bww0k6BK73v"
+#define API_KEY ""
 
 // Lấy trong Realtime Database -> Data (Copy link có https)
-#define DATABASE_URL "https://smarthome-41aff-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define DATABASE_URL ""
 
 
 // 3. User Authentication (Nên dùng Email/Pass cho thiết bị IoT cố định)
