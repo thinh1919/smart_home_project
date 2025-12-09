@@ -8,15 +8,18 @@
 
 // 2. Firebase Project Info
 // Lấy trong Project Settings -> General -> Web App
-#define API_KEY "AIzaSyD... (API Key dài ngoằng của bạn)"
+#define API_KEY "cEjzpyZD1DPsxk0MY58SYtN7nRQv4bww0k6BK73v"
 
 // Lấy trong Realtime Database -> Data (Copy link có https)
-#define DATABASE_URL "https://n49-smart-home-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define DATABASE_URL "https://smarthome-41aff-default-rtdb.asia-southeast1.firebasedatabase.app/"
+
+//project id: 
+#define PROJECT_ID "smarthome-41aff"
 
 // 3. User Authentication (Nên dùng Email/Pass cho thiết bị IoT cố định)
 // Vào Authentication -> Users -> Add user (ví dụ: device@smarthome.com)
-#define USER_EMAIL "gateway_device@n49.com"
-#define USER_PASSWORD "mat_khau_bao_mat_cua_device"
+#define USER_EMAIL "hoaianhngu2003@gmail.com"
+#define USER_PASSWORD ""
 
 // 4. Token Refresh (Quan trọng để chạy lâu dài)
 // Thư viện sẽ tự xử lý, nhưng cần khai báo để nó biết
