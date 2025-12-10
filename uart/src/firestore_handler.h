@@ -9,7 +9,7 @@
 // ===== CẤU HÌNH FIRESTORE =====
 // Project ID sẽ được định nghĩa trong platformio.ini
 #ifndef FIREBASE_PROJECT_ID
-#define FIREBASE_PROJECT_ID "your-project-id"
+#define FIREBASE_PROJECT_ID "smarthome-41aff"
 #endif
 
 // ===== KHAI BÁO HÀM =====
