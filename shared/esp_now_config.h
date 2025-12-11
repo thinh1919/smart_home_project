@@ -58,6 +58,17 @@ uint8_t clientMacAddress[11][6] = {
 #define MSG_TYPE_HEARTBEAT      3       // Tin nhắn heartbeat để kiểm tra kết nối
 #define MSG_TYPE_ACK            4       // Xác nhận đã nhận
 
+// ===== LỆNH (Command Type) - Sử dụng trong CommandPacket.command_type =====
+// Dùng chung cho Light và Fan (value = DeviceMode: 0-3)
+#define CMD_SET_MODE            1       // Set chế độ thiết bị
+// Lệnh riêng cho Curtain
+#define CMD_SET_POSITION        2       // Set vị trí rèm (value = 0-100%)
+// Lệnh riêng cho Door  
+#define CMD_DOOR_CONTROL        3       // Điều khiển cửa (value = DoorCommand)
+// Lệnh riêng cho Purifier
+#define CMD_PURIFIER_CONTROL    4       // Điều khiển máy lọc (value = PurifierCommand)
+
+
 // ===== CẤU HÌNH HEARTBEAT =====
 #define HEARTBEAT_INTERVAL      30000   // Gửi heartbeat mỗi 30 giây
 #define CLIENT_TIMEOUT          90000   // Client bị coi là mất kết nối sau 90 giây
