@@ -4,6 +4,7 @@
 #ifdef ARDUINO
 #include "firebase_handler.h"
 #include "firebase_listener.h"
+#include "firestore_handler.h"
 #endif
 
 // Timer cho batch upload (60 giây)
@@ -25,6 +26,9 @@ void setup() {
   
   // Khởi tạo Firebase listener
   initFirebaseListener();
+
+  // Khởi tạo Firestore handler
+  initFirestoreHandler();
 #endif
   
   // Khởi tạo UART handler
