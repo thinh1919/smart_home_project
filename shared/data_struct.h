@@ -20,6 +20,12 @@ enum DeviceMode {
     MODE_STRONG = 3         // Chế độ mạnh
 };
 
+// Chế độ điều khiển rèm
+enum CurtainCommand {
+    CURTAIN_CMD_NONE = 0,
+    CURTAIN_CMD_SET_POS = 1,    // Set vị trí (0-100%)
+};
+
 // Lệnh điều khiển máy lọc không khí
 enum PurifierCommand {
     PURIFIER_CMD_NONE = 0,  // Không có lệnh
@@ -65,15 +71,17 @@ struct GateData {
 
 // ===== CLIENT 4: CẢM BIẾN MÔI TRƯỜNG (Phòng Khách) =====
 struct EnvSensorData {
-    uint16_t mq135           // gia tri analog MQ135
-    uint16_t air_quality;   // Chất lượng không khí (PPM)
+    uint16_t mq135;           // gia tri analog MQ135
+    int8_t air_quality_status;   // Chất lượng không khí (PPM)  0- Tốt, 1:Nhẹ, 2: Ô nhiễm, 3: Nguy hiểm
     float lux;  	        // Độ sáng (lux)
 };
 
 // ===== CLIENT 7: RÈM CỬA (Phòng Ngủ) =====
 struct CurtainData {
-    uint8_t position;       // % độ mở hiện tại (0-100)
-    int8_t target_pos;      // Vị trí mục tiêu: -1=Không có, 0-100=Vị trí đích
+    bool isOpen;            // Trạng thái thật của rèm
+    uint8_t curtainPosition;       // % độ mở hiện tại (0-100)
+    int8_t curtainPercent;  // Vị trí mục tiêu: -1=Không có, 0-100=Vị trí đích
+    bool manualMode;       // Chế độ thủ công (true) hay tự động (false) 
 };
 
 // ===== CLIENT 8: CẢM BIẾN MÔI TRƯỜNG (Phòng Ngủ) =====

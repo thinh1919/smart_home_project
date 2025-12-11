@@ -265,7 +265,23 @@ void initESPNow() {
 void onDataRecv(const uint8_t *mac, const uint8_t *data, int len) {
   Serial.printf("📥 [ESP-NOW] Received %d bytes from %02X:%02X:%02X:%02X:%02X:%02X\n",
                 len, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  
+                
+  if (len >= sizeof(ESPNowPacketHeader) + sizeof(uint16_t)) {
+        ESPNowPacketHeader* header = (ESPNowPacketHeader*)data;
+        
+        // Tính checksum (cần biết loại packet để cast đúng)
+        // Hoặc dùng generic:
+        uint16_t calculated = 0;
+        for (int i = 0; i < len - 2; i++) {
+            calculated += data[i];
+        }
+        uint16_t received = *(uint16_t*)(data + len - 2);
+        
+        if (calculated != received) {
+            Serial.println("❌ Checksum sai, bỏ qua packet");
+            return;
+        }
+    }
   // Forward data lên WiFi Bridge qua UART
   forwardPacketToBridge(data, len);
 }

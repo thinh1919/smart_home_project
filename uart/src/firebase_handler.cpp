@@ -130,8 +130,11 @@ void uploadToFirebase(uint8_t* payload, int len) {
             // Client 4: Cảm biến môi trường phòng khách
             if (dataLen >= sizeof(EnvSensorData)) {
                 EnvSensorData* data = (EnvSensorData*)dataPtr;
-                currentHomeState.living_room_env.air_quality = data->air_quality;
-                Serial.printf("  🌡️  Chất lượng không khí: %d PPM (buffered)\n", data->air_quality);
+                currentHomeState.living_room_env.mq135 = data->mq135;                        // ✅
+                currentHomeState.living_room_env.air_quality_status = data->air_quality_status; // ✅
+                currentHomeState.living_room_env.lux = data->lux;                            // ✅
+                Serial.printf("  🌡️  AQI: %d, Status: %d, Lux: %.1f (buffered)\n", 
+                     data->mq135, data->air_quality_status, data->lux);
             }
             break;
         }
@@ -140,9 +143,11 @@ void uploadToFirebase(uint8_t* payload, int len) {
             // Client 7: Rèm cửa phòng ngủ
             if (dataLen >= sizeof(CurtainData)) {
                 CurtainData* data = (CurtainData*)dataPtr;
-                currentHomeState.bedroom_curtain.position = data->position;
-                currentHomeState.bedroom_curtain.target_pos = data->target_pos;
-                Serial.printf("  🪟 Rèm: %d%% (buffered)\n", data->position);
+                currentHomeState.bedroom_curtain.position = data->curtainPosition;
+                currentHomeState.bedroom_curtain.target_pos = data->curtainPercent;
+                currentHomeState.bedroom_curtain.state= data->isOpen;
+                currentHomeState.bedroom_curtain.mode = data->manualMode;
+                Serial.printf("  🪟 Rèm: %d%% (buffered)\n", data->curtainPosition);
             }
             break;
         }
@@ -153,8 +158,9 @@ void uploadToFirebase(uint8_t* payload, int len) {
                 BedroomEnvData* data = (BedroomEnvData*)dataPtr;
                 currentHomeState.bedroom_env.temp = data->temp;
                 currentHomeState.bedroom_env.hum = data->hum;
-                Serial.printf("  🌡️  Nhiệt độ: %.1f°C, Độ ẩm: %.1f%% (buffered)\n", 
-                             data->temp, data->hum);
+                currentHomeState.bedroom_env.lux = data->lux;
+                Serial.printf("  🌡️  Nhiệt độ: %.1f°C, Độ ẩm: %.1f%%, Độ sáng: %.1f lux (buffered)\n", 
+                             data->temp, data->hum, data->lux);
             }
             break;
         }

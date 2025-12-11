@@ -155,6 +155,7 @@ struct CommandPacket {
     uint16_t checksum;
 } __attribute__((packed));
 
+
 // ===== HÀM TRỢ GIÚP =====
 
 // Tính checksum cho gói tin

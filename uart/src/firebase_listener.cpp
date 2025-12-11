@@ -21,7 +21,7 @@ void sendCommandToGateway(uint8_t client_id, uint8_t cmd_type, int16_t value) {
                   client_id, cmd_type, value);
 
     // Tạo CommandPayload
-    CommandPayload cmd;
+    CommandPacket cmd;
     cmd.client_id = client_id;
     cmd.command_type = cmd_type;
     cmd.value = value;
@@ -32,10 +32,10 @@ void sendCommandToGateway(uint8_t client_id, uint8_t cmd_type, int16_t value) {
 
     frame[idx++] = UART_START_BYTE;
     frame[idx++] = SEND_TO_CLIENT;
-    frame[idx++] = sizeof(CommandPayload);
-    memcpy(&frame[idx], &cmd, sizeof(CommandPayload));
-    idx += sizeof(CommandPayload);
-    frame[idx++] = calculateChecksum(SEND_TO_CLIENT, sizeof(CommandPayload), (uint8_t*)&cmd);
+    frame[idx++] = sizeof(CommandPacket);
+    memcpy(&frame[idx], &cmd, sizeof(CommandPacket));
+    idx += sizeof(CommandPacket);
+    frame[idx++] = calculateChecksum(SEND_TO_CLIENT, sizeof(CommandPacket), (uint8_t*)&cmd);
     frame[idx++] = UART_END_BYTE;
 
     // Gửi qua Serial2
@@ -53,38 +53,35 @@ void streamCallback(StreamData data) {
     String path = data.dataPath();
 
     // --- 1. DOOR COMMAND ---
-    if (path == "/living_room/door/command") {
+    if (path == "/living_room/door/command") 
+    {
         String cmd = data.stringData();
-        if (cmd == "OPEN") {
-            sendCommandToGateway(CLIENT_ID_DOOR, DOOR_CMD_OPEN, 0);
-            Firebase.RTDB.setString(&streamData, "/living_room/door/command", "NONE");
-        } else if (cmd == "CLOSE") {
-            sendCommandToGateway(CLIENT_ID_DOOR, DOOR_CMD_CLOSE, 0);
-            Firebase.RTDB.setString(&streamData, "/living_room/door/command", "NONE");
-        } else if (cmd == "LOCK") {
-            sendCommandToGateway(CLIENT_ID_DOOR, DOOR_CMD_LOCK, 0);
-            Firebase.RTDB.setString(&streamData, "/living_room/door/command", "NONE");
+        if (cmd == DOOR_CMD_OPEN || cmd == DOOR_CMD_CLOSE) 
+        {
+            sendCommandToGateway(CLIENT_ID_DOOR, CMD_DOOR_CONTROL, cmd);
+            Firebase.RTDB.setInt(&streamData, "/living_room/door/command", DOOR_CMD_NONE);
+            Serial.printf("✓ Đã gửi lệnh cửa: %s\n", doorCommandToString(cmd));
         }
     }
 
     // --- 2. LIGHT COMMAND ---
     else if (path == "/living_room/light/command") {
         int mode = data.intData();
-        if (mode >= 0 && mode <= 3) {
-            sendCommandToGateway(CLIENT_ID_LIGHT, mode, 0);
+        if (mode >= MODE_OFF && mode <= MODE_STRONG) {
+            sendCommandToGateway(CLIENT_ID_LIGHT, CMD_SET_MODE, mode);
             Firebase.RTDB.setInt(&streamData, "/living_room/light/command", -1);
         }
     }
 
     // --- 3. PURIFIER COMMAND ---
-    else if (path == "/living_room/purifier/command") {
+    else if (path == "/living_room/purifier/command") 
+    {
         String cmd = data.stringData();
-        if (cmd == "ON") {
-            sendCommandToGateway(CLIENT_ID_PURIFIER, PURIFIER_CMD_ON, 0);
-            Firebase.RTDB.setString(&streamData, "/living_room/purifier/command", "NONE");
-        } else if (cmd == "OFF") {
-            sendCommandToGateway(CLIENT_ID_PURIFIER, PURIFIER_CMD_OFF, 0);
-            Firebase.RTDB.setString(&streamData, "/living_room/purifier/command", "NONE");
+        if (mode >= MODE_OFF && mode <= MODE_STRONG) 
+        {
+            sendCommandToGateway(CLIENT_ID_LIGHT, CMD_SET_MODE, mode);
+            Firebase.RTDB.setInt(&streamData, "/living_room/light/command", -1);
+            Serial.printf("✓ Đã gửi lệnh đèn: Mode=%d\n", mode);
         }
     }
 
@@ -92,17 +89,19 @@ void streamCallback(StreamData data) {
     else if (path == "/bedroom/curtain/target_pos") {
         int pos = data.intData();
         if (pos >= 0 && pos <= 100) {
-            sendCommandToGateway(CLIENT_ID_CURTAIN, CURTAIN_CMD_SET_POS, pos);
-            Firebase.RTDB.setInt(&streamData, "/bedroom/curtain/target_pos", -1);
+            sendCommandToGateway(CLIENT_ID_CURTAIN, CMD_SET_POSITION, pos);
+            Firebase.RTDB.setInt(&streamData, "/bedroom/curtain/curtainPercent", -1);
+            Serial.printf("✓ Đã gửi lệnh rèm: Vị trí=%d%%\n", pos);
         }
     }
 
     // --- 5. FAN COMMAND ---
     else if (path == "/bedroom/fan/command") {
         int mode = data.intData();
-        if (mode >= 0 && mode <= 3) {
-            sendCommandToGateway(CLIENT_ID_FAN, mode, 0);
+        if (mode >= MODE_OFF && mode <= MODE_STRONG) {
+            sendCommandToGateway(CLIENT_ID_FAN, CMD_SET_MODE, mode);
             Firebase.RTDB.setInt(&streamData, "/bedroom/fan/command", -1);
+            Serial.printf("✓ Đã gửi lệnh quạt: Mode=%d\n", mode);
         }
     }
 
