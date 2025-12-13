@@ -12,9 +12,11 @@
 
 // Liệt kê các lệnh UART
 enum UartCommand : uint8_t {
-    SEND_TO_FIREBASE = 0x01,  // Gửi dữ liệu lên Firebase
-    SEND_TO_CLIENT   = 0x02,  // Gửi dữ liệu đến Client
-    SYSTEM_STATUS    = 0x03   // Thông tin trạng thái hệ thống
+    SEND_TO_FIREBASE = 0x01,     // Gửi dữ liệu lên Bridge
+    SEND_TO_CLIENT   = 0x02,    // Gửi dữ liệu đến Client
+    SYSTEM_STATUS    = 0x03,    // Thông tin trạng thái hệ thống
+    TIME_SYNC        = 0x04,    //  Lệnh đồng bộ thời gian
+    ENERGY_REPORT    = 0x05,    //  Gateway gửi báo cáo năng lượng lên Bridge
 };
 
 // Cấu trúc khung truyền UART

@@ -1,8 +1,13 @@
 #ifndef DATA_STRUCT_H
 #define DATA_STRUCT_H
 
-#include <Arduino.h>
 
+#ifdef ARDUINO
+    #include <Arduino.h>
+#else
+    #include <cstdint>
+    #include <cstddef>
+#endif
 // ===== ĐỊNH NGHĨA ENUM =====
 
 // Loại lệnh cho cửa và cổng
@@ -53,10 +58,11 @@ struct DoorData {
     uint8_t command;        // Lệnh: NONE, OPEN, CLOSE, LOCK
 };
 
-// ===== CLIENT 2: ĐÈN (Phòng Khách) =====
+// ===== CLIENT 6: ĐÈN (Phòng Khách) =====
 struct LightData {
     uint8_t mode;           // Chế độ hiện tại: 0-3 (Tắt, Eco, Vừa, Mạnh)
     int8_t command;         // Lệnh từ App: -1 = Không có, 0-3=Lệnh
+    float power;           // công suất tức thời
 };
 
 // ===== CLIENT 3: CỔNG =====
@@ -95,13 +101,23 @@ struct BedroomEnvData {
 struct FanData {
     uint8_t mode;           // Chế độ hiện tại: 0-3 (Tắt, Eco, Vừa, Mạnh)
     int8_t command;         // Lệnh từ App: -1=Không có, 0-3=Lệnh
+    float power;           // công suất tức thời (W)
 };
 
 // ===== CLIENT 10: MÁY LỌC KHÔNG KHÍ (Phòng Khách) =====
 struct PurifierData {
     bool state;             // Trạng thái: Bật/Tắt
     uint8_t command;        // Lệnh: ON, OFF, NONE
+    float power;           // công suất tức thời (W)
 };
+
+// Client 11 : công tơ tổng
+struct MainMeterData {
+    float voltage;     // V
+    float current;     // A
+    float power;       // W
+};
+
 
 // ===== ĐIỀU KHIỂN KỊCH BẢN =====
 struct SceneControl {
@@ -127,7 +143,7 @@ struct HomeStatus {
     BedroomEnvData bedroom_env;
     
     // Cổng
-    GateData gate;
+    //GateData gate;
 };
 
 // ===== NHẬT KÝ TRUY CẬP =====
@@ -144,25 +160,40 @@ struct RfidCard {
     bool is_active;         // Trạng thái kích hoạt
 };
 
-// ===== DỮ LIỆU NĂNG LƯỢNG =====
-#define MAX_DAYS_IN_MONTH 31
-struct EnergyData {
-    char month[8];          // Tháng: "2025-11"
-    uint16_t year;          // Năm: 2025
-    
-    float total_kwh;        // Tổng điện tiêu thụ cả tháng (kWh)
-    uint32_t total_cost;    // Tổng tiền (VND)
-    
-    // Dữ liệu theo ngày: Index 0 = ngày 1, index 30 = ngày 31
-    float daily_data[MAX_DAYS_IN_MONTH];
-    
-    // Mức tiêu thụ theo thiết bị
-    float fan_bed;          // Quạt phòng ngủ
-    float purifier;         // Máy lọc không khí
-    float light_living;     // Đèn phòng khách
-    float curtain;          // Rèm cửa
-    float others;           // Thiết bị khác
+
+// ===== CẤU TRÚC ĐỒNG BỘ THỜI GIAN (Bridge -> Gateway) =====
+struct TimeSyncPacket {
+    uint16_t year;
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
 };
+
+
+// ===== CẤU TRÚC DỮ LIỆU NĂNG LƯỢNG (Lưu trong Gateway) =====
+// Cấu trúc này dùng để lưu vào Flash và gửi lên App
+struct EnergyReport {
+    uint16_t year;
+    uint8_t month;
+    
+    float total_kwh;      // Tổng điện năng (kWh)
+    float total_cost;     // Tổng tiền (VND)
+
+    // Chi tiết từng thiết bị (kWh)
+    float kwh_fan;
+    float kwh_light;
+    float kwh_purifier;
+    float kwh_others;     // Các thiết bị khác (Tivi, Tủ lạnh...)
+
+    // Mảng lưu kWh từng ngày trong tháng (Index 0 = Ngày 1)
+    // float daily_kwh[31]; // Tạm thời bỏ qua để tiết kiệm RAM/Flash nếu chưa cần thiết ngay
+    // Thay vào đó lưu:
+    float kwh_today;      // Điện năng hôm nay
+    uint8_t current_day;  // Ngày hiện tại đang tính
+};
+
 
 // ===== CẤU TRÚC TIN NHẮN CLIENT =====
 // Cấu trúc tin nhắn chung cho giao tiếp client-gateway

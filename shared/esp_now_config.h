@@ -11,22 +11,26 @@
 // ===== ĐỊA CHỈ MAC CỦA GATEWAY =====
 // Thay đổi địa chỉ MAC này theo Gateway thực tế của bạn
 // Để lấy MAC address: WiFi.macAddress() hoặc esp_wifi_get_mac()
-uint8_t gatewayAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+inline uint8_t gatewayAddress[] = {0x80, 0xB5, 0x4E, 0xC8, 0x0F, 0xB0};
 
 // ===== ĐỊA CHỈ MAC CỦA CÁC CLIENT =====
 // Thay đổi địa chỉ MAC theo thiết bị thực tế
 // Lưu ý: Phải chạy sketch lấy MAC trên từng ESP32 trước
-uint8_t clientMacAddress[11][6] = {
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x01},  // [1] - Client 1: Cửa phòng khách
+inline uint8_t clientMacAddress[12][6] = 
+{
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},  // [0] - ID 0: KHÔNG DÙNG (DUMMY)
+    {0x6C, 0xC8, 0x40, 0x86, 0xF7, 0x98},  // [1] - Client 1: Cửa phòng khách
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},  // [2] - ID 2: KHÔNG DÙNG (DUMMY)
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},  // [3] - Client 3: Cổng (chưa sử dụng)
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x04},  // [4] - Client 4: Cảm biến môi trường phòng khách
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x07},  // [5] - Client 5: Máy lọc không khí
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x06},  // [6] - Client 6: Đèn phòng khách
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x08},  // [7] - Client 7: Rèm cửa phòng ngủ
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x0A},  // [8] - Client 8: Cảm biến môi trường phòng ngủ
-    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x09},  // [9] - Client 9: Quạt phòng ngủ
+    {0x6C, 0xC8, 0x40, 0x86, 0x51, 0x14},  // [4] - Client 4: Cảm biến môi trường phòng khách
+    {0x00, 0x70, 0x07, 0x26, 0xA2, 0x74},  // [5] - Client 5: Máy lọc không khí
+    {0x00, 0x70, 0x07, 0x1B, 0x8C, 0xBC},  // [6] - Client 6: Đèn phòng khách
+    {0x6C, 0xC8, 0x40, 0x86, 0xF7, 0x98},  // [7] - Client 7: Rèm cửa phòng ngủ
+    {0x6C, 0xC8, 0x40, 0x88, 0x25, 0x64},  // [8] - Client 8: Cảm biến môi trường phòng ngủ
+    {0x20, 0xE7, 0xC8, 0x68, 0xA4, 0xFC},  // [9] - Client 9: Quạt phòng ngủ
+    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x05},  // [10] - Client 10: nút bấm đèn
+    {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x0B},  // [11] - Client 11: Cảm biến công tơ tổng 
 };
-
 
 // ===== CẤU HÌNH WIFI CHANNEL =====
 // ESP-NOW hoạt động tốt nhất khi tất cả thiết bị cùng channel
@@ -42,9 +46,10 @@ uint8_t clientMacAddress[11][6] = {
 #define CLIENT_ID_ENV_BEDROOM   8   // Cảm biến môi trường phòng ngủ
 #define CLIENT_ID_FAN           9   // Quạt phòng ngủ
 #define CLIENT_ID_PURIFIER      5   // Máy lọc không khí
-
+#define CLIENT_ID_LIGHTBUTTON   10  // NÚT bấm đèn
+#define CLIENT_ID_MAIN_METER    11  // Cảm biến công tơ tổng 
 // Số lượng client tối đa
-#define MAX_CLIENTS             11
+#define MAX_CLIENTS             12
 
 // ===== CẤU HÌNH ESP-NOW =====
 #define ESP_NOW_MAX_DATA_LEN    250     // Kích thước tối đa của gói tin ESP-NOW
@@ -101,11 +106,12 @@ struct LightPacket {
 } __attribute__((packed));
 
 // Client 3: Cổng
-struct GatePacket {
+/*struct GatePacket {
     ESPNowPacketHeader header;
     GateData data;
     uint16_t checksum;
 } __attribute__((packed));
+*/
 
 // Client 4: Cảm biến môi trường phòng khách
 struct EnvSensorPacket {
@@ -141,6 +147,14 @@ struct PurifierPacket {
     PurifierData data;
     uint16_t checksum;
 } __attribute__((packed));
+
+// Client 11 : công to tổng
+struct MainMeterPacket {
+    ESPNowPacketHeader header;
+    MainMeterData data;
+    uint16_t checksum;
+} __attribute__((packed));
+
 
 // ===== GÓI TIN HEARTBEAT =====
 struct HeartbeatPacket {
